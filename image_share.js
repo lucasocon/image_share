@@ -16,6 +16,23 @@ if (Meteor.isClient) {
         return Images.find({}, {sort: {createdOn: -1, rating: -1}});
       }
     },
+    filtering_images: function() {
+      if (Session.get("userFilter")) {// they set a filter!
+        return true;
+      }
+      else {
+        return false;
+      }
+    },
+    getFilterUser: function() {
+      if (Session.get("userFilter")) {// they set a filter!
+        var user = Meteor.users.findOne({_id: Session.get("userFilter")});
+        return user.username;
+      }
+      else {
+        return false;
+      }
+    },
     getUser: function(user_id) {
       var user = Meteor.users.findOne({_id: user_id});
       if (user) {
@@ -63,6 +80,9 @@ if (Meteor.isClient) {
     },
     'click .js-set-image-filter': function(event) {
       Session.set("userFilter", this.createdBy);
+    },
+    'click .js-unset-image-filter': function(event) {
+      Session.set("userFilter", undefined);
     }
   });
 
