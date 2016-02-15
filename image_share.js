@@ -7,8 +7,24 @@ if (Meteor.isClient) {
     passwordSignupFields: "USERNAME_AND_EMAIL"
   });
 
-  Template.images.helpers({images:
-    Images.find({}, {sort: {createdOn: -1, rating: -1}})
+  Template.images.helpers({
+    images: function() {
+      if (Session.get("userFilter")) {// they set a filter!
+        return Images.find({createdBy: Session.get("userFilter")}, {sort: {createdOn: -1, rating: -1}});
+      }
+      else {
+        return Images.find({}, {sort: {createdOn: -1, rating: -1}});
+      }
+    },
+    getUser: function(user_id) {
+      var user = Meteor.users.findOne({_id: user_id});
+      if (user) {
+        return user.username;
+      }
+      else {
+        return "anon";
+      }
+    }
   });
 
   Template.body.helpers({username: function() {
@@ -44,6 +60,9 @@ if (Meteor.isClient) {
     },
     'click .js-show-image-form': function(event){
       $("#image_add_form").modal('show');
+    },
+    'click .js-set-image-filter': function(event) {
+      Session.set("userFilter", this.createdBy);
     }
   });
 
@@ -52,11 +71,15 @@ if (Meteor.isClient) {
       var img_src, img_alt;
       img_src = event.target.img_src.value;
       img_alt = event.target.img_alt.value;
-      Images.insert({
-        img_src: img_src,
-        img_alt: img_alt,
-        createdOn: new Date()
-      });
+      if (Meteor.user()) {
+        Images.insert({
+          img_src: img_src,
+          img_alt: img_alt,
+          createdOn: new Date(),
+          createdBy: Meteor.user()._id
+        });
+      }
+
       $("#image_add_form").modal('hide');
 
       return false;
