@@ -1,7 +1,24 @@
-// this is image_share.js
 Images = new Mongo.Collection('images');
 
 if (Meteor.isClient) {
+
+  Session.set("imagesLimit", 8);
+
+  lastScrollTop = 0;
+  $(window).scroll(function(event) {
+    // where we are on the page?
+    var scrollTop = $(this).scrollTop();
+    // check if we are near te bottom of the window
+    var windowScrollTop = Math.round($(window).scrollTop());
+    if (windowScrollTop == $(document).height() - $(window).height()) {
+      // check if we are going down
+      if (scrollTop > lastScrollTop) {
+        Session.set("imagesLimit", Session.get("imagesLimit") + 4);
+      }
+
+      lastScrollTop = scrollTop;
+    }
+  });
 
   Accounts.ui.config({
     passwordSignupFields: "USERNAME_AND_EMAIL"
@@ -9,15 +26,15 @@ if (Meteor.isClient) {
 
   Template.images.helpers({
     images: function() {
-      if (Session.get("userFilter")) {// they set a filter!
+      if (Session.get("userFilter")) {
         return Images.find({createdBy: Session.get("userFilter")}, {sort: {createdOn: -1, rating: -1}});
       }
       else {
-        return Images.find({}, {sort: {createdOn: -1, rating: -1}});
+        return Images.find({}, {sort: {createdOn: -1, rating: -1}, limit: Session.get("imagesLimit")});
       }
     },
     filtering_images: function() {
-      if (Session.get("userFilter")) {// they set a filter!
+      if (Session.get("userFilter")) {
         return true;
       }
       else {
@@ -25,7 +42,7 @@ if (Meteor.isClient) {
       }
     },
     getFilterUser: function() {
-      if (Session.get("userFilter")) {// they set a filter!
+      if (Session.get("userFilter")) {
         var user = Meteor.users.findOne({_id: Session.get("userFilter")});
         return user.username;
       }
@@ -47,7 +64,6 @@ if (Meteor.isClient) {
   Template.body.helpers({username: function() {
     if (Meteor.user()) {
       return Meteor.user().username
-      // return Meteor.user().emails[0].address
     }
     else {
       return "anonymous internet user";
@@ -62,8 +78,6 @@ if (Meteor.isClient) {
     'click .js-del-image': function(event) {
       var image_id = this._id;
 
-    // use jquery to hide image component
-    // then remove it at the end of the animation
       $("#"+image_id).hide('slow', function() {
         Images.remove({"_id": image_id});
       });
